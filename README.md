@@ -1,71 +1,80 @@
-# cursor-stats README
+# Cursor Stats
 
-This is the README for your extension "cursor-stats". After writing up a brief description, we recommend including the following sections.
+一个用于监控 Cursor AI 使用情况的 VSCode 扩展。实时显示 GPT-4、GPT-3.5 和 GPT-4-32k 的使用量统计，以及会员状态信息。
 
-## Features
+## 功能特性
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 实时显示 GPT-4 的使用量和限额
+- 显示会员状态和试用期剩余天数
+- 自动更新（每5分钟）
+- 支持鼠标悬停查看详细信息
+- 东八区时间显示
 
-For example if there is an image subfolder under your extension project workspace:
+### 状态栏显示
+状态栏会显示当前 GPT-4 的使用情况和会员状态：
+- 使用量/限额
+- 会员状态（试用/正式会员）
+- 试用剩余天数（如果适用）
 
-\!\[feature X\]\(images/feature-x.png\)
+### 详细统计
+将鼠标悬停在状态栏上可以查看详细信息：
+- 统计开始时间
+- GPT-4 使用情况
+  - 本月请求次数
+  - 总请求次数
+  - Token 使用量
+  - 最大请求限制
+- GPT-3.5 使用情况
+- GPT-4-32k 使用情况
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 系统要求
 
-## Requirements
+- VSCode 1.96.0 或更高版本（推荐使用最新版本）
+- Cursor AI 客户端
+- macOS 操作系统（目前仅支持）
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## 安装
 
-## Extension Settings
+1. 在 VSCode 中打开扩展市场
+2. 搜索 "Cursor Stats"
+3. 点击安装
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## 使用方法
 
-For example:
+安装后扩展会自动激活，并在状态栏显示使用情况。
 
-This extension contributes the following settings:
+可以通过以下方式手动刷新：
+1. 命令面板（Cmd/Ctrl + Shift + P）
+2. 输入 "Cursor Stats: 检查统计"
+3. 回车执行
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+也可以直接点击状态栏图标刷新统计信息。
 
-## Known Issues
+## 注意事项
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- 需要已登录 Cursor AI
+- 仅支持 macOS 系统
+- 需要网络连接以获取最新统计数据
 
-## Release Notes
+## 隐私说明
 
-Users appreciate release notes as you update your extension.
+本扩展会读取：
+- Cursor 的本地数据库获取认证信息
+- 通过 API 获取使用量统计
+- 不会收集或上传任何个人信息
 
-### 1.0.0
+## 问题反馈
 
-Initial release of ...
+如果您在使用过程中遇到任何问题，请在 GitHub 仓库提交 Issue。
 
-### 1.0.1
+## 更新日志
 
-Fixed issue #.
+### 0.0.1
+- 初始版本发布
+- 支持基本的使用量统计显示
+- 支持会员状态显示
+- 支持自动更新
 
-### 1.1.0
+## License
 
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT
