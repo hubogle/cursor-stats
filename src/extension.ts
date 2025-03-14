@@ -30,22 +30,8 @@ export function activate(context: vscode.ExtensionContext) {
 		markdown.supportHtml = true;
 		markdown.supportThemeIcons = true;
 
-		const startDate = new Date(usage.startOfMonth);
-		const options: Intl.DateTimeFormatOptions = {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-			hour12: false,
-			timeZone: 'Asia/Shanghai'
-		};
-		const formattedDate = startDate.toLocaleString('zh-CN', options).replace(/\//g, '-');
-
-		// 添加标题和刷新按钮
 		markdown.appendMarkdown(`#### Cursor 使用情况 \n\n`);
 
-		// 添加电子邮件信息
 		if (email) {
 			markdown.appendMarkdown(`**账号:** ${email}\n\n`);
 		}
@@ -65,7 +51,6 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 			markdown.appendMarkdown(`**查询时间:** ${checkTimeStr}\n\n`);
 		}
-		// markdown.appendMarkdown(`**开始时间:** ${formattedDate}\n\n`);
 
 		markdown.appendMarkdown(`**请求用量:** ${usage['gpt-4'].numRequests}/${usage['gpt-4'].maxRequestUsage}\n\n`);
 
@@ -102,7 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// 修改自动更新逻辑
-	const updateInterval = 5 * 60 * 1000; // 5分钟更新一次
+	const updateInterval = 10 * 60 * 1000; // 10分钟更新一次
 	setInterval(async () => {
 		const tokenInfo = await getCursorToken();
 		if (tokenInfo) {
@@ -164,7 +149,6 @@ async function getCursorToken(): Promise<{ userId: string, token: string, email?
 		}
 
 		const userId = decoded.payload.sub.toString().split('|')[1];
-		const sessionToken = `${userId}%3A%3A${token}`;
 
 		// 提取电子邮件信息
 		let email: string | undefined;
@@ -173,7 +157,7 @@ async function getCursorToken(): Promise<{ userId: string, token: string, email?
 		}
 
 		db.close();
-		return { userId, token: sessionToken, email };
+		return { userId, token: token, email };
 	} catch (error) {
 		console.error('获取 Token 失败:', error);
 		return undefined;
@@ -183,12 +167,13 @@ async function getCursorToken(): Promise<{ userId: string, token: string, email?
 // 添加获取使用量的函数
 async function getCursorUsage(userId: string, token: string): Promise<CursorUsageResponse | undefined> {
 	try {
+		const sessionToken = `${userId}%3A%3A${token}`;
 		const options = {
 			hostname: 'www.cursor.com',
 			path: `/api/usage?user=${encodeURIComponent(userId)}`,
 			method: 'GET',
 			headers: {
-				'Cookie': `WorkosCursorSessionToken=${token}`,
+				'Cookie': `WorkosCursorSessionToken=${sessionToken}`,
 				'Referer': 'https://www.cursor.com/settings',
 			},
 		};
@@ -227,12 +212,12 @@ async function getCursorUsage(userId: string, token: string): Promise<CursorUsag
 async function getCursorMembership(token: string): Promise<CursorMembershipResponse | undefined> {
 	try {
 		const options = {
-			hostname: 'www.cursor.com',
-			path: '/api/auth/stripe',
+			hostname: 'api2.cursor.sh',
+			path: '/auth/full_stripe_profile',
 			method: 'GET',
 			headers: {
-				'Cookie': `WorkosCursorSessionToken=${token}`,
-				'Referer': 'https://www.cursor.com/settings',
+				'Authorization': `Bearer ${token}`,
+				'Origin': 'vscode-file://vscode-app'
 			},
 		};
 

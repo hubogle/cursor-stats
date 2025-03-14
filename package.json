@@ -2,7 +2,7 @@
   "name": "cursor-stats",
   "displayName": "cursor-stats",
   "description": "cursor check stats",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.96.0"
