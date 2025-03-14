@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 
 	// 修改 tooltip 更新函数
-	const updateTooltip = (usage: CursorUsageResponse, membership: CursorMembershipResponse, email?: string) => {
+	const updateTooltip = (usage: CursorUsageResponse, membership: CursorMembershipResponse, email?: string, checkTime?: Date) => {
 		const markdown = new vscode.MarkdownString();
 		markdown.isTrusted = true;
 		markdown.supportHtml = true;
@@ -43,8 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const formattedDate = startDate.toLocaleString('zh-CN', options).replace(/\//g, '-');
 
 		// 添加标题和刷新按钮
-		markdown.appendMarkdown(`### Cursor 使用情况 \n\n`);
-		// markdown.appendMarkdown(`<a href="command:cursor-stats.checkStats" title="刷新数据"><span style="background-color:#4CAF50;color:white;padding:2px 6px;border-radius:3px;font-size:0.8em;">$(sync) 刷新</span></a>\n\n`);
+		markdown.appendMarkdown(`#### Cursor 使用情况 \n\n`);
 
 		// 添加电子邮件信息
 		if (email) {
@@ -54,9 +53,22 @@ export function activate(context: vscode.ExtensionContext) {
 		markdown.appendMarkdown(`**状态:** ${membership.membershipType === 'free_trial' ?
 			`试用期（剩余 ${membership.daysRemainingOnTrial} 天）` :
 			membership.membershipType}\n\n`);
-		markdown.appendMarkdown(`**开始时间:** ${formattedDate}\n\n`);
 
-		markdown.appendMarkdown(`**请求用量:** ${usage['gpt-4'].numRequests} / ${usage['gpt-4'].maxRequestUsage}\n\n`);
+		if (checkTime) {
+			const checkTimeStr = checkTime.toLocaleString('zh-CN', {
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false,
+				timeZone: 'Asia/Shanghai'
+			});
+			markdown.appendMarkdown(`**查询时间:** ${checkTimeStr}\n\n`);
+		}
+		// markdown.appendMarkdown(`**开始时间:** ${formattedDate}\n\n`);
+
+		markdown.appendMarkdown(`**请求用量:** ${usage['gpt-4'].numRequests}/${usage['gpt-4'].maxRequestUsage}\n\n`);
+
 		markdown.appendMarkdown(`**Token Total:** ${usage['gpt-4'].numTokens}\n\n`);
 
 		// 添加底部链接
@@ -77,7 +89,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				if (usage && membership) {
 					updateStatusBar(usage);
-					updateTooltip(usage, membership, tokenInfo.email);
+					updateTooltip(usage, membership, tokenInfo.email, new Date());
 				} else {
 					vscode.window.showErrorMessage('获取信息失败');
 				}
@@ -100,7 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
 			]);
 			if (usage && membership) {
 				updateStatusBar(usage);
-				updateTooltip(usage, membership, tokenInfo.email);
+				updateTooltip(usage, membership, tokenInfo.email, new Date());
 			}
 		}
 	}, updateInterval);
