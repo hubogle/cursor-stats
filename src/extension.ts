@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 
 	// 修改 tooltip 更新函数
-	const updateTooltip = (usage: CursorUsageResponse, membership: CursorMembershipResponse) => {
+	const updateTooltip = (usage: CursorUsageResponse, membership: CursorMembershipResponse, email?: string) => {
 		const markdown = new vscode.MarkdownString();
 		markdown.isTrusted = true;
 		markdown.supportHtml = true;
@@ -42,16 +42,25 @@ export function activate(context: vscode.ExtensionContext) {
 		};
 		const formattedDate = startDate.toLocaleString('zh-CN', options).replace(/\//g, '-');
 
-		markdown.appendMarkdown(`### Cursor 使用情况\n\n`);
-		markdown.appendMarkdown(`**会员状态:** ${membership.membershipType === 'free_trial' ?
+		// 添加标题和刷新按钮
+		markdown.appendMarkdown(`### Cursor 使用情况 \n\n`);
+		// markdown.appendMarkdown(`<a href="command:cursor-stats.checkStats" title="刷新数据"><span style="background-color:#4CAF50;color:white;padding:2px 6px;border-radius:3px;font-size:0.8em;">$(sync) 刷新</span></a>\n\n`);
+
+		// 添加电子邮件信息
+		if (email) {
+			markdown.appendMarkdown(`**账号:** ${email}\n\n`);
+		}
+
+		markdown.appendMarkdown(`**状态:** ${membership.membershipType === 'free_trial' ?
 			`试用期（剩余 ${membership.daysRemainingOnTrial} 天）` :
 			membership.membershipType}\n\n`);
 		markdown.appendMarkdown(`**开始时间:** ${formattedDate}\n\n`);
 
-		markdown.appendMarkdown(`#### 请求数量\n`);
-		markdown.appendMarkdown(`- 使用情况: \`${usage['gpt-4'].numRequests}\` / ${usage['gpt-4'].maxRequestUsage}\n`);
-		markdown.appendMarkdown(`- 总请求次数: \`${usage['gpt-4'].numRequestsTotal}\`\n`);
-		markdown.appendMarkdown(`- Token 使用量: \`${usage['gpt-4'].numTokens}\`\n`);
+		markdown.appendMarkdown(`**请求用量:** ${usage['gpt-4'].numRequests} / ${usage['gpt-4'].maxRequestUsage}\n\n`);
+		markdown.appendMarkdown(`**Token Total:** ${usage['gpt-4'].numTokens}\n\n`);
+
+		// 添加底部链接
+		markdown.appendMarkdown(`<a href="https://www.cursor.com/settings" title="在浏览器中打开设置"><span style="color:#007ACC;">在浏览器中查看更多详情</span></a>`);
 
 		statusBarItem.tooltip = markdown;
 	};
@@ -68,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				if (usage && membership) {
 					updateStatusBar(usage);
-					updateTooltip(usage, membership);
+					updateTooltip(usage, membership, tokenInfo.email);
 				} else {
 					vscode.window.showErrorMessage('获取信息失败');
 				}
@@ -91,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
 			]);
 			if (usage && membership) {
 				updateStatusBar(usage);
-				updateTooltip(usage, membership);
+				updateTooltip(usage, membership, tokenInfo.email);
 			}
 		}
 	}, updateInterval);
@@ -114,7 +123,7 @@ function getCursorDBPath(): string {
 }
 
 // 获取 Cursor Token
-async function getCursorToken(): Promise<{ userId: string, token: string } | undefined> {
+async function getCursorToken(): Promise<{ userId: string, token: string, email?: string } | undefined> {
 	try {
 		const dbPath = getCursorDBPath();
 		if (!fs.existsSync(dbPath)) {
@@ -125,14 +134,16 @@ async function getCursorToken(): Promise<{ userId: string, token: string } | und
 		const SQL = await initSqlJs();
 		const db = new SQL.Database(new Uint8Array(dbBuffer));
 
-		const result = db.exec("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
+		// 查询 token 和 email
+		const tokenResult = db.exec("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'");
+		const emailResult = db.exec("SELECT value FROM ItemTable WHERE key = 'cursorAuth/cachedEmail'");
 
-		if (!result.length || !result[0].values.length) {
+		if (!tokenResult.length || !tokenResult[0].values.length) {
 			db.close();
 			return undefined;
 		}
 
-		const token = result[0].values[0][0] as string;
+		const token = tokenResult[0].values[0][0] as string;
 		const decoded = jwt.decode(token, { complete: true });
 
 		if (!decoded?.payload?.sub) {
@@ -142,8 +153,15 @@ async function getCursorToken(): Promise<{ userId: string, token: string } | und
 
 		const userId = decoded.payload.sub.toString().split('|')[1];
 		const sessionToken = `${userId}%3A%3A${token}`;
+
+		// 提取电子邮件信息
+		let email: string | undefined;
+		if (emailResult.length && emailResult[0].values.length) {
+			email = emailResult[0].values[0][0] as string;
+		}
+
 		db.close();
-		return { userId, token: sessionToken };
+		return { userId, token: sessionToken, email };
 	} catch (error) {
 		console.error('获取 Token 失败:', error);
 		return undefined;
